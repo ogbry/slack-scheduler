@@ -29,21 +29,26 @@ export default function SlackScheduler() {
   }, [delay, unit, message, webhookUrl]);
 
   const sendMessage = async () => {
-    const unitMultiplier =
-      unit === "seconds" ? 1 : unit === "minutes" ? 60 : 3600;
-    const delayInMs = Math.max(delay * unitMultiplier * 1000, 0);
+    const delayInMs = Math.max(
+      delay * (unit === "seconds" ? 1 : unit === "minutes" ? 60 : 3600) * 1000,
+      0
+    );
 
     setTimeout(async () => {
       const formattedMessage = `From Bryan's Slack Bot: ${message}`;
 
       try {
-        const response = await fetch(webhookUrl, {
+        const response = await fetch("/api/sendMessage", {
+          // Calls your Next.js API route
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: formattedMessage }),
+          body: JSON.stringify({ message: formattedMessage, webhookUrl }),
         });
 
-        if (!response.ok) throw new Error("Failed to send message");
+        const data = await response.json();
+        if (!response.ok)
+          throw new Error(data.error || "Failed to send message");
+
         alert("Message sent!");
       } catch (error) {
         alert("Error sending message: " + error.message);
@@ -84,7 +89,11 @@ export default function SlackScheduler() {
           value={webhookUrl}
           onChange={(e) => setWebhookUrl(e.target.value)}
         />
-        <Button onClick={sendMessage} disabled={isDisabled}>
+        <Button
+          className="cursor-pointer"
+          onClick={sendMessage}
+          disabled={isDisabled}
+        >
           {buttonText}
         </Button>
       </div>
